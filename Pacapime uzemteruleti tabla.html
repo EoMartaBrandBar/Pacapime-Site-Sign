@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nyelvváltós kép</title>
+
+  <!-- Preload a képekre a gyorsabb váltáshoz -->
+  <link rel="preload" as="image" href="https://cdn.prod.website-files.com/686d0342d25e6a1a1653adac/68b7ffac73087cdadb46ce10_Pacapime_nagytabla_200x150cm_WEB_2025-09-03_FL_HU-ENG.webp">
+  <link rel="preload" as="image" href="https://cdn.prod.website-files.com/686d0342d25e6a1a1653adac/68b7ffacd1d9216c45c3b613_Pacapime_nagytabla_200x150cm_WEB_2025-09-03_FL_HU-RO.webp">
+  <link rel="preload" as="image" href="https://cdn.prod.website-files.com/686d0342d25e6a1a1653adac/68b7ffac74de6b8d1e8e7fcb_Pacapime_nagytabla_200x150cm_WEB_2025-09-03_FL_HU-NL.webp">
+
+  <style>
+    :root { --bg:#0b0b0c; --fg:#fff; --muted:#b8bcc5; --accent:#6ee7ff; }
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--fg);
+      font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
+      display:grid; place-items:center;
+    }
+    .wrap{ width:min(1100px, 95vw); padding:20px; }
+    .toolbar{
+      display:flex; gap:10px; justify-content:center; align-items:center; margin-bottom:16px; flex-wrap:wrap;
+    }
+    .btn{
+      appearance:none; border:1px solid color-mix(in srgb, var(--muted) 50%, transparent);
+      background:transparent; color:var(--fg);
+      padding:10px 14px; border-radius:999px; cursor:pointer; font-weight:600;
+      transition:transform .06s ease, background-color .2s ease, border-color .2s ease;
+    }
+    .btn:hover{ transform:translateY(-1px); border-color:var(--fg); }
+    .btn[aria-pressed="true"]{
+      background:color-mix(in srgb, var(--accent) 25%, transparent);
+      border-color:var(--accent);
+      box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent) inset;
+    }
+    .stage{
+      display:grid; place-items:center;
+      background:linear-gradient(180deg, #0f1115, #0b0b0c);
+      border:1px solid color-mix(in srgb, var(--muted) 35%, transparent);
+      border-radius:38px; padding:12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    .stage img{
+      width:100%; height:auto; max-height:80vh; display:block; border-radius:30px;
+    }
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;}
+    footer{margin-top:10px; text-align:center; color:var(--muted); font-size:13px;}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1 class="sr-only">Nyelvváltós kép</h1>
+
+    <nav class="toolbar" aria-label="Nyelvválasztó">
+      <button class="btn" data-lang="hu-eng" aria-pressed="false">HU-ENG</button>
+      <button class="btn" data-lang="hu-ro"  aria-pressed="false">HU-RO</button>
+      <button class="btn" data-lang="hu-nl"  aria-pressed="false">HU-NL</button>
+    </nav>
+
+    <section class="stage" aria-live="polite">
+      <img id="poster" alt="Táblakép – nyelvváltozat: HU-ENG" loading="eager" decoding="async">
+    </section>
+
+    <footer>Select your language using the buttons above.</footer>
+  </main>
+
+  <script>
+    // Képek térképe nyelvi kulcs alapján
+    const IMAGES = {
+      "hu-eng": "https://cdn.prod.website-files.com/686d0342d25e6a1a1653adac/68b7ffac73087cdadb46ce10_Pacapime_nagytabla_200x150cm_WEB_2025-09-03_FL_HU-ENG.webp",
+      "hu-ro" : "https://cdn.prod.website-files.com/686d0342d25e6a1a1653adac/68b7ffacd1d9216c45c3b613_Pacapime_nagytabla_200x150cm_WEB_2025-09-03_FL_HU-RO.webp",
+      "hu-nl" : "https://cdn.prod.website-files.com/686d0342d25e6a1a1653adac/68b7ffac74de6b8d1e8e7fcb_Pacapime_nagytabla_200x150cm_WEB_2025-09-03_FL_HU-NL.webp"
+    };
+
+    const ALT = {
+      "hu-eng": "Táblakép – nyelvváltozat: HU-ENG",
+      "hu-ro" : "Táblakép – nyelvváltozat: HU-RO",
+      "hu-nl" : "Táblakép – nyelvváltozat: HU-NL"
+    };
+
+    const poster = document.getElementById('poster');
+    const buttons = Array.from(document.querySelectorAll('.btn'));
+
+    // Alapértelmezett nyelv: hash alapján, különben HU-ENG
+    function getLangFromHash() {
+      const raw = (location.hash || '').replace('#','').toLowerCase();
+      return (raw in IMAGES) ? raw : 'hu-eng';
+    }
+
+    function setActive(lang) {
+      // Kép frissítése
+      poster.src = IMAGES[lang];
+      poster.alt = ALT[lang];
+
+      // Gomb állapotok
+      buttons.forEach(btn => {
+        const pressed = btn.dataset.lang === lang;
+        btn.setAttribute('aria-pressed', String(pressed));
+      });
+
+      // Hash frissítése (nem görget fel)
+      if (location.hash.replace('#','') !== lang) {
+        history.replaceState(null, '', `#${lang}`);
+      }
+    }
+
+    // Események: gombkattintás és hash-változás (pl. direkt link/QR)
+    buttons.forEach(btn => btn.addEventListener('click', () => setActive(btn.dataset.lang)));
+    window.addEventListener('hashchange', () => setActive(getLangFromHash()));
+
+    // Kezdő állapot
+    setActive(getLangFromHash());
+  </script>
+
+  <noscript>
+    <div style="text-align:center; padding:1rem; color:#ccc;">
+      A teljes élményhez engedélyezd a JavaScriptet. Statikus linkek:
+      <div><a href="#hu-eng">HU-ENG</a> · <a href="#hu-ro">HU-RO</a> · <a href="#hu-nl">HU-NL</a></div>
+    </div>
+  </noscript>
+</body>
+</html>
